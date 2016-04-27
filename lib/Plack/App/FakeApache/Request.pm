@@ -17,8 +17,6 @@ use Plack::App::FakeApache::Server;
 use Cwd qw(cwd);
 use URI;
 
-use Apache2::Const qw(HTTP_OK);
-
 my $NS = "plack.app.fakeapache";
 
 # Plack related attributes:
@@ -138,7 +136,7 @@ has auth_name => (
 
 # builders
 sub _build_plack_request  { return Plack::Request->new( shift->env ) }
-sub _build_plack_response { return Plack::Response->new( 0, {}, [] ) }
+sub _build_plack_response { return Plack::Response->new( 200, {}, [] ) }
 sub _build__apr_pool      { return APR::Pool->new() }
 sub _build_headers_out    { return APR::Table::make( shift->_apr_pool, 64 ) }
 sub _build_err_headers_out{ return APR::Table::make( shift->_apr_pool, 64 ) }
@@ -181,15 +179,7 @@ sub finalize {
     my $self     = shift;
     my $response = $self->plack_response;
 
-    # Set the status if it's still on our initial (illegal) value of 0
-    # This way, handlers can generate 3xx and 4xx status codes, and other
-    # internal errors can be recorded by Plack and passed onwards.
-    $self->status(HTTP_OK)
-        unless $self->status();
-
-    # Set these headers for 1xx, 2xx and 3xx responses:
-    $self->headers_out->do( sub { $response->header( @_ ); 1 } )
-        unless is_error( $self->status() );
+    $self->headers_out->do( sub { $response->header( @_ ); 1 } ) if is_success( $self->status() );
     $self->err_headers_out->do( sub { $response->header( @_ ); 1 } );
 
     return $response->finalize;
