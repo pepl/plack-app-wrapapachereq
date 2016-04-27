@@ -8,8 +8,6 @@ my $build = Module::Build->new(
 
     requires    => {
         'Plack'      => 0,
-        'APR::Pool'  => 0,
-        'APR::Table' => 0,
         'CGI::Emulate::PSGI' => 0,
         'Try::Tiny' => 0,
     },

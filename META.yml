@@ -30,8 +30,6 @@ provides:
   Plack::App::WrapApacheReq:
     file: lib/Plack/App/WrapApacheReq.pm
 requires:
-  APR::Pool: 0
-  APR::Table: 0
   CGI::Emulate::PSGI: 0
   Plack: 0
   Try::Tiny: 0
