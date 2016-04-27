@@ -195,9 +195,21 @@ sub finalize {
     # stacked up in ->headers_out() with a ->status() set to 30x or 404, if
     # your handler returns OK.
     # FIXME - check how apache merges duplicates in headers_out/err_headers_out
-    $self->headers_out->do( sub { $response->header( @_ ); 1 } )
+    # For now, assume that the observed behaviour for Cookies headers is general
+    my %seen;
+    my $headers = $response->headers();
+    my $merge = sub {
+        if ($seen{$_[0]}++) {
+            $headers->push_header(@_);
+        } else {
+            $headers->header(@_);
+        }
+        1;
+    };
+
+    $self->headers_out->do($merge)
         if $handler_status == OK || $handler_status == DONE;
-    $self->err_headers_out->do( sub { $response->header( @_ ); 1 } );
+    $self->err_headers_out->do($merge);
 
     return $response->finalize;
 };
