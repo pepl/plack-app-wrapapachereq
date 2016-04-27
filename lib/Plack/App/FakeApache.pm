@@ -13,9 +13,9 @@ use attributes;
 use Carp;
 use Module::Load;
 use Scalar::Util qw( blessed );
-use Apache2::Const qw(OK DECLINED HTTP_OK HTTP_UNAUTHORIZED HTTP_NOT_FOUND);
+use Apache2::Const qw(OK DECLINED HTTP_UNAUTHORIZED HTTP_NOT_FOUND);
 
-our $VERSION = 0.06;
+our $VERSION = '0.06_01';
 
 sub _get_phase_handlers
 {
@@ -83,7 +83,11 @@ sub call {
 
     my $status = $self->_run_handlers($fake_req);
 
-    $fake_req->status($status == OK ? HTTP_OK : $status);
+    # Only set the status here there was trouble. If we do it unconditionally,
+    # we trample on any non-200 responses set by the handlers
+    $fake_req->status($status)
+        if $status != OK;
+
     return $fake_req->finalize;
 }
 
