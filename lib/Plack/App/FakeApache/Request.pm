@@ -139,6 +139,12 @@ has auth_name => (
     isa        => 'Str',
 );
 
+has protocol => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => 'HTTP/1.1',
+);
+
 # builders
 sub _build_plack_request  { return Plack::Request->new( shift->env ) }
 sub _build_plack_response { return Plack::Response->new( 200, {}, [] ) }
