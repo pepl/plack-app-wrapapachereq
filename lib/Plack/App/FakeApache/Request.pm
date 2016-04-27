@@ -96,13 +96,10 @@ has _subprocess_env => (
     lazy_build => 1,
 );
 
-has dir_config => (
-    isa     => 'HashRef[Any]',
-    traits  => ['Hash'],
-    default => sub { {} },
-    handles => {
-        dir_config => 'accessor'
-    }
+has _dir_config => (
+    is         => 'ro',
+    isa        => 'APR::Table',
+    lazy_build => 1,
 );
 
 has location => (
@@ -151,6 +148,7 @@ sub _build_plack_response { return Plack::Response->new( 200, {}, [] ) }
 sub _build__apr_pool      { return APR::Pool->new() }
 sub _build_headers_out    { return APR::Table::make( shift->_apr_pool, 64 ) }
 sub _build_err_headers_out{ return APR::Table::make( shift->_apr_pool, 64 ) }
+sub _build__dir_config    { return APR::Table::make( shift->_apr_pool, 64 ) }
 
 sub _build__subprocess_env { 
     my $self  = shift;
@@ -243,6 +241,27 @@ sub subprocess_env {
     }
 
     $self->_subprocess_env->do( sub { $ENV{ $_[0] } = $_[1]; 1 } );
+    return;
+}
+
+sub dir_config {
+    my $self = shift;
+
+    if (@_ == 0) {
+        return $self->_dir_config;
+    }
+
+    if (@_ == 1) {
+        return scalar $self->_dir_config->get( @_ );
+    }
+
+    my ($key, $value) = @_;
+
+    if (defined $value) {
+        $self->_dir_config->set( $value );
+    } else {
+        $self->_dir_config->clear( $value );
+    }
     return;
 }
 

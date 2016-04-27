@@ -16,7 +16,7 @@ use Scalar::Util qw( blessed );
 use Apache2::Const qw(OK DECLINED DONE
                       HTTP_UNAUTHORIZED HTTP_NOT_FOUND HTTP_NOT_IMPLEMENTED);
 
-our $VERSION = '0.06_02';
+our $VERSION = '0.06_03';
 
 sub _get_phase_handlers
 {
