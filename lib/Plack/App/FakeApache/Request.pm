@@ -11,6 +11,7 @@ use Plack::App::File;
 
 use Plack::App::FakeApache::Connection;
 use Plack::App::FakeApache::Log;
+use Plack::App::FakeApache::Notes;
 use Plack::App::FakeApache::Server;
 use Cwd qw(cwd);
 use URI;
@@ -284,6 +285,10 @@ sub pnotes {
 
 sub notes {
     my $self = shift;
+    if (!@_) {
+        return Plack::App::FakeApache::Notes->new(env => $self->env);
+    }
+
     my $key  = shift;
     my $old = $self->env->{$NS.'.notes'}->{$key};
 

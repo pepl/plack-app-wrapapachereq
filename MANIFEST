@@ -6,6 +6,7 @@ examples/wrapwrap.psgi
 lib/Plack/App/FakeApache.pm
 lib/Plack/App/FakeApache/Connection.pm
 lib/Plack/App/FakeApache/Log.pm
+lib/Plack/App/FakeApache/Notes.pm
 lib/Plack/App/FakeApache/Request.pm
 lib/Plack/App/FakeApache/Server.pm
 lib/Plack/App/WrapApacheReq.pm
