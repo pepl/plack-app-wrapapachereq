@@ -5,8 +5,6 @@ use Moose;
 use APR::Pool;
 use APR::Table;
 
-use HTTP::Status qw(:is);
-
 use Plack::Request;
 use Plack::Response;
 use Plack::App::File;
@@ -17,7 +15,7 @@ use Plack::App::FakeApache::Server;
 use Cwd qw(cwd);
 use URI;
 
-use Apache2::Const qw(HTTP_OK);
+use Apache2::Const qw(OK DONE);
 
 my $NS = "plack.app.fakeapache";
 
@@ -60,6 +58,11 @@ has log => (
 has server => (
     is      => 'rw',
     default => sub { Plack::App::FakeApache::Server->new() },
+);
+
+has handler_status => (
+    is         => 'rw',
+    isa        => 'Int|Undef',
 );
 
 # Apache related attributes
@@ -138,7 +141,7 @@ has auth_name => (
 
 # builders
 sub _build_plack_request  { return Plack::Request->new( shift->env ) }
-sub _build_plack_response { return Plack::Response->new( 0, {}, [] ) }
+sub _build_plack_response { return Plack::Response->new( 200, {}, [] ) }
 sub _build__apr_pool      { return APR::Pool->new() }
 sub _build_headers_out    { return APR::Table::make( shift->_apr_pool, 64 ) }
 sub _build_err_headers_out{ return APR::Table::make( shift->_apr_pool, 64 ) }
@@ -180,16 +183,14 @@ sub _build_filename {
 sub finalize { 
     my $self     = shift;
     my $response = $self->plack_response;
+    my $handler_status = $self->handler_status();
 
-    # Set the status if it's still on our initial (illegal) value of 0
-    # This way, handlers can generate 3xx and 4xx status codes, and other
-    # internal errors can be recorded by Plack and passed onwards.
-    $self->status(HTTP_OK)
-        unless $self->status();
-
-    # Set these headers for 1xx, 2xx and 3xx responses:
+    # Set these headers if we handled it. mod_perl will happily send headers
+    # stacked up in ->headers_out() with a ->status() set to 30x or 404, if
+    # your handler returns OK.
+    # FIXME - check how apache merges duplicates in headers_out/err_headers_out
     $self->headers_out->do( sub { $response->header( @_ ); 1 } )
-        unless is_error( $self->status() );
+        if $handler_status == OK || $handler_status == DONE;
     $self->err_headers_out->do( sub { $response->header( @_ ); 1 } );
 
     return $response->finalize;

@@ -13,9 +13,10 @@ use attributes;
 use Carp;
 use Module::Load;
 use Scalar::Util qw( blessed );
-use Apache2::Const qw(OK DECLINED HTTP_UNAUTHORIZED HTTP_NOT_FOUND);
+use Apache2::Const qw(OK DECLINED DONE
+                      HTTP_UNAUTHORIZED HTTP_NOT_FOUND HTTP_NOT_IMPLEMENTED);
 
-our $VERSION = '0.06_01';
+our $VERSION = '0.06_02';
 
 sub _get_phase_handlers
 {
@@ -83,10 +84,20 @@ sub call {
 
     my $status = $self->_run_handlers($fake_req);
 
-    # Only set the status here there was trouble. If we do it unconditionally,
-    # we trample on any non-200 responses set by the handlers
-    $fake_req->status($status)
-        if $status != OK;
+    $fake_req->handler_status($status);
+    # Only set the status here if it's an actual HTTP status code. If we do it
+    # unconditionally, we trample on any non-200 responses set in ->status()
+    # by the handlers which have returned with 'OK';
+    if ($status > OK) {
+        $fake_req->status($status)
+    } elsif ($status == OK || $status == DONE) {
+        # The status started as 200, the hanlder might have changed it
+    } else {
+        # I don't think that it should be possible to get here, as the code
+        # below will have returned HTTP_NOT_FOUND from the call to
+        # _run_first('response', ...) if all handlers returned DECLINED.
+        $fake_req->status(HTTP_NOT_IMPLEMENTED);
+    }
 
     return $fake_req->finalize;
 }
